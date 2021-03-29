@@ -116,9 +116,9 @@ shinyServer(function(input, output) {
         req(!is.null(input$UI_n_inputs))
         req(length(RV_ISO$names_backup) > 0)
         
-        print(input$UI_n_inputs)
-        print(RV_ISO$names_backup)
-        print(RV_ISO$input_types)
+        # print(input$UI_n_inputs)
+        # print(RV_ISO$names_backup)
+        # print(RV_ISO$input_types)
         
         Func_Make_L1_UI(
             n_uis = input$UI_n_inputs,
@@ -139,7 +139,13 @@ shinyServer(function(input, output) {
     
     
     output$global_test <- renderPrint({
-        print(x)
+        print(global_test_text)
+    })
+    
+    output$debuglist <- renderPrint({
+        I <- reactiveValuesToList(input)
+        
+        print(I)
     })
     
 })

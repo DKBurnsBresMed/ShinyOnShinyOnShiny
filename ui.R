@@ -36,7 +36,8 @@ shinyUI(fluidPage(
         mainPanel(
             uiOutput("UI_name_and_type"),
             uiOutput("UI_input_set"),
-            verbatimTextOutput("global_test")
+            verbatimTextOutput("global_test"),
+            verbatimTextOutput("debuglist")
         )
     )
 ))

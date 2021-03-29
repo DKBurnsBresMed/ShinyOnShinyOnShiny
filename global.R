@@ -183,21 +183,27 @@ Func_Make_L2_UI <- function(n_inputs, input_types, isolated_input_sets = NULL) {
   # depending on whether there are any isolated inputs or not, generate
   # a list of length 1:n_inputs containing default values
   
-  if (is.null(isolated_input_sets)) {
-    isolated_input_sets <- lapply(1:n_inputs, function(this_input_set) {
-      Func_blank_input_set(input_types[[this_input_set]])
-    })
-    names(isolated_input_sets) <- paste0("inputs_", 1:n_inputs)
-  }
+  isolated_input_sets <- lapply(1:n_inputs, function(this_input_set) {
+    if (length(isolated_input_sets) < n_inputs) {
+      Func_blank_input_set(type = "A")
+    } else {
+      isolated_input_sets[[this_input_set]]
+    }
+  })
+  
   
   # generate the UI elements. note that they get put into containers
   # when they get put into tabs. All that needs to go below is the
   # UI elements themselves
   
+  
   tab_content <- lapply(1:n_inputs, function(This_ui) {
+    # print(This_ui)
+    # print(input_types[This_ui])
+    # print(isolated_input_sets[[This_ui]])
     Func_Make_L2_UI_tab(
       n         = This_ui,
-      type      = input_types[[This_ui]],
+      type      = input_types[This_ui],
       input_set = isolated_input_sets[[This_ui]]
     )
   })
@@ -426,5 +432,70 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
     
     return(UI)
   }
+  
+}
+
+# this_type <- A
+# n_logical <- 0
+# n_numeric <- 5
+# n_picker  <- 3
+
+
+Func_get_inputs <- function(set, type) {
+
+  # number of each type of input
+  if (type == "A") {
+    n <- list(
+      logical = 0,
+      numeric = 5,
+      picker  = 3
+    )
+  } else if (type == "B") {
+    n <- list(
+      logical = 0,
+      numeric = 2,
+      picker  = 3
+    )
+  } else {
+    n <- list(
+      logical = 2,
+      numeric = 2,
+      picker  = 3
+    )
+  }
+  
+  # logicals
+  if (n_logical == 0) {logicals <- list()} else {
+    nams_logicals <- paste0("UI_set_",set,"_type_",type,"_logical_",1:n_logical)
+    logicals <- lapply(1:n_logical, function(this_logical){
+      isolate(input[[nams_logicals[this_logical]]])
+    })
+    names(logicals) <- paste0(type,"_switch",1:n_logical)
+  }
+  
+  # numerics
+  if (n_numeric == 0) {numerics <- list()} else {
+    nams_numerics <- paste0("UI_set_",set,"_type_",type,"_numeric_",1:n_numeric)
+    numerics <- lapply(1:n_numeric, function(this_numeric){
+      isolate(input[[nams_numerics[this_numeric]]])
+    })
+    names(numerics) <- paste0(type,"_numb",1:n_numeric)
+  }
+  
+  # pickers
+  if (n_picker == 0) {pickers <- list()} else {
+    nams_pickers <- paste0("UI_set_",set,"_type_",type,"_picker_",1:n_picker)
+    pickers <- lapply(1:n_picker, function(this_picker){
+      isolate(input[[nams_pickers[this_picker]]])
+    })
+    names(pickers) <- paste0(type,"_pick",1:n_picker)
+  }
+  
+  
+  return(list(
+    logicals = logicals,
+    numerics = numerics,
+    pickers = pickers
+  ))
   
 }
