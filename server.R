@@ -132,7 +132,7 @@ shinyServer(function(input, output) {
         Func_Make_L2_UI(
             n_inputs = input$UI_n_inputs, 
             input_types = RV_ISO$input_types, 
-            isolated_input_sets = NULL
+            isolated_input_sets = RV_ISO$isolated_input_sets
         )
     })
     

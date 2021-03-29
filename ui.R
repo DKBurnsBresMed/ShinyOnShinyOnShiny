@@ -35,7 +35,7 @@ shinyUI(fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
             uiOutput("UI_name_and_type"),
-            plotOutput("UI_input_set"),
+            uiOutput("UI_input_set"),
             verbatimTextOutput("global_test")
         )
     )

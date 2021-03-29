@@ -194,38 +194,28 @@ Func_Make_L2_UI <- function(n_inputs, input_types, isolated_input_sets = NULL) {
   # when they get put into tabs. All that needs to go below is the
   # UI elements themselves
   
-  tab_content <- tagList(
-    lapply(1:n_inputs, function(This_ui) {
-      Func_Make_L2_UI_tab(
-        n         = This_ui,
-        type      = input_types[[This_ui]],
-        input_set = isolated_input_sets[[This_ui]]
-      )
-    })
-  )
+  tab_content <- lapply(1:n_inputs, function(This_ui) {
+    Func_Make_L2_UI_tab(
+      n         = This_ui,
+      type      = input_types[[This_ui]],
+      input_set = isolated_input_sets[[This_ui]]
+    )
+  })
   
   # put all of the UIs in a tab to go in the tab box
   
   final_tabs <- lapply(1:n_inputs, function(This_ui) {
-    tabPanel(
-      title = tab_names[This_ui],
-      fluidRow(
-        width = 12,
-        column(
-          12,
-          tab_content[[This_ui]]
-        )
+    fluidRow(
+      width = 12,
+      column(
+        12,
+        tab_content[[This_ui]]
       )
     )
   })
   
   
-  tabBox(
-    title = "level 1 I/O",
-    width = "100%",
-    side = "left",
-    final_tabs
-  )
+  final_tabs
   
 }
 
@@ -359,6 +349,7 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
       # Type A has 5 numerics, 3 pickers. These should be in a box with primary status.
       fluidRow(
         width = 12,
+        h3("Type A"),
         column(
           6,
           tagList(
@@ -386,7 +377,8 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
   if (type == "B") {
     
     # 2 numerics 3 pickers, not in a box
-    UI <- tagList(
+    UI <- div(
+      h3("Type B"),
       fluidRow(
         width = 12,
         column(6,ui_numerics[[1]]),
@@ -418,6 +410,7 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
       collapsible = TRUE,
       collapsed = TRUE,
       status = "info",
+      h3("Type C"),
       fluidRow(
         width = 12,
         column(6,ui_logicals[[1]]),
