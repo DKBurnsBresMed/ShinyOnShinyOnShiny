@@ -3,11 +3,20 @@
 # 
 
 
-global_test_text <- "global.R is working"
+# libraries ---------------------------------------------------------------
+
+library(shiny)
+library(shinyWidgets)
+library(shinydashboard)
+
+
+
 
 
 
 # globally available objects ----------------------------------------------
+
+global_test_text <- "global.R is working"
 
 # EXAMPLES
 
@@ -185,7 +194,7 @@ Func_Make_L2_UI <- function(n_inputs, input_types, isolated_input_sets = NULL) {
   
   isolated_input_sets <- lapply(1:n_inputs, function(this_input_set) {
     if (length(isolated_input_sets) < n_inputs) {
-      Func_blank_input_set(type = "A")
+      Func_blank_input_set(type = input_types[this_input_set])
     } else {
       isolated_input_sets[[this_input_set]]
     }
@@ -198,9 +207,9 @@ Func_Make_L2_UI <- function(n_inputs, input_types, isolated_input_sets = NULL) {
   
   
   tab_content <- lapply(1:n_inputs, function(This_ui) {
-    # print(This_ui)
-    # print(input_types[This_ui])
-    # print(isolated_input_sets[[This_ui]])
+    print(str(This_ui))
+    print(str(input_types[This_ui]))
+    print(str(isolated_input_sets[[This_ui]]))
     Func_Make_L2_UI_tab(
       n         = This_ui,
       type      = input_types[This_ui],
@@ -414,7 +423,7 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
       solidHeader = TRUE,
       width = 12,
       collapsible = TRUE,
-      collapsed = TRUE,
+      collapsed = FALSE,
       status = "info",
       h3("Type C"),
       fluidRow(
@@ -424,7 +433,7 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
       ),
       fluidRow(
         width = 12,
-        splitLayout(ui_numerics)
+        column(12,splitLayout(ui_numerics))
       ),
       verticalLayout(ui_pickers,fluid = TRUE)
       
@@ -439,6 +448,104 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
 # n_logical <- 0
 # n_numeric <- 5
 # n_picker  <- 3
+
+Mod_get_inputs <- function(id, set, type, RV_ISO) {
+  moduleServer(
+    id,
+    
+    function(input, output, session) {
+      
+      n <- reactive({
+        # number of each type of input
+        if (type == "A") {
+          n <- list(
+            logical = 0,
+            numeric = 5,
+            picker  = 3
+          )
+        } else if (type == "B") {
+          n <- list(
+            logical = 0,
+            numeric = 2,
+            picker  = 3
+          )
+        } else {
+          n <- list(
+            logical = 2,
+            numeric = 2,
+            picker  = 3
+          )
+        }
+      })
+      
+      print(unlist(n()))
+      
+      # logicals
+      logicals <- reactive({
+        req(!is.null(n))
+        if (n()$logical == 0) {logicals <- list()} else {
+          nams_logicals <- paste0("UI_set_",set,"_type_",type,"_logical_",1:n()$logical)
+          
+          print(nams_logicals)
+          
+          logicals <- lapply(1:n()$logical, function(this_logical){
+            if (!is.null(input[[nams_logicals[this_logical]]])) {
+              input[[nams_logicals[this_logical]]]
+            } else {
+              RV_ISO$isolated_input_sets[[set]][["logicals"]]
+            }
+          })
+          names(logicals) <- paste0(type,"_switch",1:n()$logical)
+          return(logicals)
+        }
+      }) 
+      
+      print(str(logicals()))
+      
+      # numerics
+      numerics <- reactive({
+        req(!is.null(n))
+        if (n()$numeric == 0) {numerics <- list()} else {
+          nams_numerics <- paste0("UI_set_",set,"_type_",type,"_numeric_",1:n()$numeric)
+          numerics <- lapply(1:n()$numeric, function(this_numeric){
+            input[[nams_numerics[this_numeric]]]
+          })
+          names(numerics) <- paste0(type,"_numb",1:n()$numeric)
+          return(numerics)
+        }
+      })
+      
+      # pickers
+      pickers <- reactive({
+        req(!is.null(n))
+        if (n()$picker == 0) {pickers <- list()} else {
+          nams_pickers <- paste0("UI_set_",set,"_type_",type,"_picker_",1:n()$picker)
+          pickers <- lapply(1:n()$picker, function(this_picker){
+            input[[nams_pickers[this_picker]]]
+          })
+          names(pickers) <- paste0(type,"_pick",1:n()$picker)
+          return(pickers)
+        }
+      })
+      
+      
+      OUT <- reactive({
+        req(any(
+          !is.null(logicals()),
+          !is.null(numerics()),
+          !is.null(pickers())
+        ))
+        list(
+          logicals = logicals(),
+          numerics = numerics(),
+          pickers  = pickers()
+        )
+      })
+      
+      return(OUT())
+    }
+  )
+}
 
 
 Func_get_inputs <- function(set, type) {
@@ -465,30 +572,30 @@ Func_get_inputs <- function(set, type) {
   }
   
   # logicals
-  if (n_logical == 0) {logicals <- list()} else {
-    nams_logicals <- paste0("UI_set_",set,"_type_",type,"_logical_",1:n_logical)
-    logicals <- lapply(1:n_logical, function(this_logical){
+  if (n()$logical == 0) {logicals <- list()} else {
+    nams_logicals <- paste0("UI_set_",set,"_type_",type,"_logical_",1:n()$logical)
+    logicals <- lapply(1:n()$logical, function(this_logical){
       isolate(input[[nams_logicals[this_logical]]])
     })
-    names(logicals) <- paste0(type,"_switch",1:n_logical)
+    names(logicals) <- paste0(type,"_switch",1:n()$logical)
   }
   
   # numerics
-  if (n_numeric == 0) {numerics <- list()} else {
-    nams_numerics <- paste0("UI_set_",set,"_type_",type,"_numeric_",1:n_numeric)
-    numerics <- lapply(1:n_numeric, function(this_numeric){
+  if (n()$numeric == 0) {numerics <- list()} else {
+    nams_numerics <- paste0("UI_set_",set,"_type_",type,"_numeric_",1:n()$numeric)
+    numerics <- lapply(1:n()$numeric, function(this_numeric){
       isolate(input[[nams_numerics[this_numeric]]])
     })
-    names(numerics) <- paste0(type,"_numb",1:n_numeric)
+    names(numerics) <- paste0(type,"_numb",1:n()$numeric)
   }
   
   # pickers
-  if (n_picker == 0) {pickers <- list()} else {
-    nams_pickers <- paste0("UI_set_",set,"_type_",type,"_picker_",1:n_picker)
-    pickers <- lapply(1:n_picker, function(this_picker){
+  if (n()$picker == 0) {pickers <- list()} else {
+    nams_pickers <- paste0("UI_set_",set,"_type_",type,"_picker_",1:n()$picker)
+    pickers <- lapply(1:n()$picker, function(this_picker){
       isolate(input[[nams_pickers[this_picker]]])
     })
-    names(pickers) <- paste0(type,"_pick",1:n_picker)
+    names(pickers) <- paste0(type,"_pick",1:n()$picker)
   }
   
   

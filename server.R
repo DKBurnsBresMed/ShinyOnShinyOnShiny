@@ -66,15 +66,19 @@ shinyServer(function(input, output) {
     observe({
         
         req(!is.null(input$UI_n_inputs))
+        # req(!is.null(input$UI_inputset_name1))
+        # req(!is.null(input$UI_inputset_type1))
             
         RV_ISO$names_backup <- lapply(1:input$UI_n_inputs, function(this_input) {
             isolate(input[[paste0("UI_inputset_name", this_input)]])
         })
         
         # also store the types whenever the max goes up, or the types change
-        RV_ISO$input_types <- unlist(lapply(1:input$UI_n_inputs, function(this_input){
-            isolate(input[[paste0("UI_inputset_type",this_input)]])
-        }))
+        if (!is.null(input$UI_inputset_name1)) {
+            RV_ISO$input_types <- unlist(lapply(1:input$UI_n_inputs, function(this_input){
+                isolate(input[[paste0("UI_inputset_type",this_input)]])
+            }))
+        }
         
     })
     
@@ -84,6 +88,28 @@ shinyServer(function(input, output) {
             isolate(input[[paste0("UI_inputset_type",this_input)]])
         }))
     })
+    
+    
+    observeEvent(input$UI_updateInputSet,{
+        RV_ISO$isolated_input_sets <- unlist(lapply(1:RV_ISO$n_inputs_max, function(this_input){
+            if (this_input > input$UI_n_inputs) {
+                # This should be the backed up set
+                RV_ISO$isolated_input_sets[[this_input]]
+            } else {
+                # this should be the live set
+                this_input_set <- Mod_get_inputs(
+                    id   = paste0("input_set_",this_input),
+                    set  = this_input,
+                    type = input[[paste0("UI_inputset_type",this_input)]],
+                    RV_ISO = RV_ISO
+                )
+                
+                return(this_input_set)
+                
+            }
+        }))
+    })
+    
     
     output$debugout <- renderPrint({
         req(!is.null(RV_ISO))
@@ -128,10 +154,14 @@ shinyServer(function(input, output) {
     })
 
     
+    
     output$UI_input_set <- renderUI({
+        req(!is.null(input$UI_n_inputs))
+        req(!is.null(RV_ISO$input_types))
+        req(!is.null(RV_ISO$isolated_input_sets))
         Func_Make_L2_UI(
-            n_inputs = input$UI_n_inputs, 
-            input_types = RV_ISO$input_types, 
+            n_inputs            = input$UI_n_inputs, 
+            input_types         = RV_ISO$input_types, 
             isolated_input_sets = RV_ISO$isolated_input_sets
         )
     })
