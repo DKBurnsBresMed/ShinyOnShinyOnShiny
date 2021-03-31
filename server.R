@@ -167,6 +167,28 @@ shinyServer(function(input, output) {
     })
     
     
+    output$UI_input_set_mod <- renderUI({
+        
+        req(!is.null(input$UI_n_inputs))
+        req(!is.null(RV_ISO$input_types))
+        req(!is.null(RV_ISO$isolated_input_sets))
+        
+        lapply(1:input$UI_n_inputs, function(this_input_set) {
+            Mod_input_set(
+                id = paste0("input_set_",this_input_set),
+                n = this_input_set,
+                type = RV_ISO$input_types[this_input_set],
+                input_set = RV_ISO$isolated_input_sets[[this_input_set]]
+            )
+        })
+        
+        
+        
+        Mod_input_set()
+        
+    })
+    
+    
     
     output$global_test <- renderPrint({
         print(global_test_text)

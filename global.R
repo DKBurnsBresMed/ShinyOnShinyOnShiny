@@ -242,64 +242,242 @@ Func_Make_L2_UI <- function(n_inputs, input_types, isolated_input_sets = NULL) {
 Func_blank_input_set <- function(type) {
   if (type == "A") {
     list(
+      logicals = list(),
       numerics = list(
-        A_numb1 = 1,
-        A_numb2 = 5,
-        A_numb3 = 10,
-        A_numb4 = 20,
-        A_numb5 = 50
+        numb1 = 1,
+        numb2 = 5,
+        numb3 = 10,
+        numb4 = 20,
+        numb5 = 50
       ),
       pickers = list(
-        A_pick1 = "option #1",
-        A_pick2 = "option #2",
-        A_pick3 = "option #4"
+        pick1 = list(
+          selected = "option #1",
+          choices = paste0("option #",1:5)
+        ),
+        pick2 = list(
+          selected = "option #2",
+          choices = paste0("option #",1:5)
+        ),
+        pick3 = list(
+          selected = "option #4",
+          choices = paste0("option #",1:5)
+        )
       )
     )
   } else if (type == "B") {
     list(
+      logicals = list(),
       numerics = list(
-        B_numb1 = 0,
-        B_numb2 = 1
+        numb1 = 0,
+        numb2 = 1
       ),
       pickers = list(
-        B_pick1 = "option #3",
-        B_pick2 = "option #4",
-        B_pick3 = "option #2"
-      )
-    )
-  } else if (type == "C") {
-    list(
-      logicals = list(
-        C_switch1 = TRUE,
-        C_switch2 = FALSE
-      ),
-      numerics = list(
-        C_numb1 = 0,
-        C_numb2 = 1
-      ),
-      pickers = list(
-        C_pick1 = "option #3",
-        C_pick2 = "option #4",
-        C_pick3 = "option #2"
+        pick1 = list(
+          selected = "option #3",
+          choices = paste0("option #",1:5)
+        ),
+        pick2 = list(
+          selected = "option #4",
+          choices = paste0("option #",1:5)
+        ),
+        pick3 = list(
+          selected = "option #2",
+          choices = paste0("option #",1:5)
+        )
       )
     )
   } else {
     list(
       logicals = list(
-        D_switch1 = FALSE,
-        D_switch2 = TRUE
+        switch1 = TRUE,
+        switch2 = FALSE
       ),
       numerics = list(
-        D_numb1 = 1,
-        D_numb2 = 15
+        numb1 = 0,
+        numb2 = 1
       ),
       pickers = list(
-        D_pick1 = "option #1",
-        D_pick2 = "option #1"
+        pick1 = list(
+          selected = "option #3",
+          choices = paste0("option #",1:5)
+        ),
+        pick2 = list(
+          selected = "option #4",
+          choices = paste0("option #",1:5)
+        ),
+        pick3 = list(
+          selected = "option #2",
+          choices = paste0("option #",1:5)
+        )
       )
-    ) 
-  }
+    )
+  } 
 }
+
+
+Mod_input_set <- function(id, n, type, input_set) {
+  moduleServer(
+    id = id,
+    function(input, output, session) {
+      
+      # reactive: either generate default input set or pass along the
+      # one entered into the call to the module
+      live_inputs <- reactive({
+        if (is.null(input_set)) {
+          # generate an input set containing the default values for this type
+          Func_blank_input_set(type = type)
+        } else {
+          # There are some inputs in input_set, pass along
+          input_set
+        }
+      })
+      
+      # count the amount of each type of input needed, now we have the inputs
+      n_of_UI_types <- reactive({
+        req(!is.null(live_inputs()))
+        lapply(live_inputs(),class)
+      })
+      
+      
+      # now, generate the names of the UI elements for this input set. all 
+      # individual inputs, as well as what they are housed in!
+      this_input_UI_element_names <- reactive({
+        req(!is.null(live_inputs()))
+        req(!is.null(n_of_UI_types()))
+        
+        # make a list of the individual inputs required for this "type" of UI
+        
+        n_elem <- n_of_UI_types()
+        
+        # first thing is input names. if there are these types of inputs to make, make their
+        # names
+        input_names <-
+          list(
+            logicals = vector(mode = "list", length = length(n_elem$logicals)),
+            numerics = vector(mode = "list", length = length(n_elem$numerics)),
+            pickers  = vector(mode = "list", length = length(n_elem$pickers))
+          )
+        
+        if (length(n_of_UI_types()$logicals) > 0) {
+          input_names$logicals <- lapply(1:length(input_names$logicals), function(this_logical){
+            paste0("UI_set_",n,"_logical_",this_logical)
+          })
+        }
+        if (length(n_of_UI_types()$numerics) > 0) {
+          input_names$numerics <- lapply(1:length(input_names$numerics), function(this_numeric){
+            paste0("UI_set_",n,"_logical_",this_numeric)
+          })
+        }
+        if (length(n_of_UI_types()$pickers) > 0) {
+          input_names$pickers <- lapply(1:length(input_names$pickers), function(this_picker){
+            paste0("UI_set_",n,"_logical_",this_picker)
+          })
+        }
+        
+        # return the input names
+        return(input_names)
+      })
+      
+      
+      # Now that we have the names of the inputs we need to make we can proceed to
+      # generate the UI elements
+      UI_elements <- reactive({
+        req(!is.null(live_inputs()))
+        req(!is.null(n_of_UI_types()))
+        req(!is.null(this_input_UI_element_names()))
+        
+        # get the names of the UI elements and their values
+        n_elem <- n_of_UI_types()
+        nams   <- this_input_UI_element_names()
+        vals   <- live_inputs()
+        
+        # produce empty list to populate
+        UI_elements <-
+          list(
+            logicals = vector(mode = "list", length = length(n_elem$logicals)),
+            numerics = vector(mode = "list", length = length(n_elem$numerics)),
+            pickers  = vector(mode = "list", length = length(n_elem$pickers))
+          )
+        
+        # generate the UI elements
+        if (length(n_of_UI_types()$logicals) > 0) {
+          UI_elements$logicals <- lapply(1:length(UI_elements$logicals), function(this_logical){
+            materialSwitch(
+              inputId = nams$logicals[[this_logical]],
+              label   = nams$logicals[[this_logical]],
+              value   = vals$logicals[[this_logical]]
+            )
+          })
+        }
+        if (length(n_of_UI_types()$numerics) > 0) {
+          UI_elements$numerics <- lapply(1:length(), function(this_numeric){
+            numericInputIcon(
+              inputId = nams$numerics[[this_numeric]],
+              label   = nams$numerics[[this_numeric]],
+              value   = vals$numerics[[this_numeric]],
+              size    = "sm",
+              icon    = icon("calculator"),
+              width   = "100%"
+            )
+          })
+        }
+        if (length(n_of_UI_types()$pickers) > 0) {
+          UI_elements$pickers <- lapply(1:length(), function(this_picker){
+            pickerInput(
+              inputId  = nams$pickers[[this_picker]],
+              label    = nams$pickers[[this_picker]],
+              choices  = vals$pickers[[this_picker]]$choices,
+              selected = vals$pickers[[this_picker]]$selected,
+              width    = "100%"
+            )
+          })
+        }
+        
+        # return all of our elements
+        return(UI_elements)
+      })
+      
+
+      # Now that we have the UI elements, we need to house them inside of an appropriate
+      # container, depending on the type
+      
+      output$this_UI <- renderUI({
+        req(!is.null(UI_elements()))
+        
+        ui_title <- paste0("Set #",n,", Type ", type)
+        
+        status <- switch (type,
+          "A" = "primary",
+          "B" = "info",
+          "C" = "warning"
+        )
+        box(
+          title = ui_title,
+          status = status,
+          solidHeader = TRUE,
+          width = 12,
+          collapsible = TRUE,
+          collapsed = FALSE,
+          fluidRow(width = 12,
+                   column(12, splitLayout(
+                     UI_elements$logicals
+                   ))),
+          verticalLayout(UI_elements$numerics, fluid = TRUE),
+          verticalLayout(UI_elements$numerics, fluid = TRUE)
+        )
+        
+      })
+    }
+  )
+}
+
+
+one_input_set_UI <- function(id) {
+  ns <- NS(id)
+  uiOutput(ns("this_UI"))
+}
+
 
 
 # function to make the "level 2" UI: takes the input set for the corresponding type
@@ -319,8 +497,8 @@ Func_Make_L2_UI_tab <- function(n, type, input_set) {
     ui_logicals <- lapply(1:length(logicals), function(this_logical) {
       materialSwitch(
         inputId = paste0("UI_set_",n,"_type_",type,"_logical_",this_logical),
-        label = paste0("UI_set_",n,"_type_",type,"_logical_",this_logical),
-        value = logicals[[paste0(type,"_switch",this_logical)]]
+        label   = paste0("UI_set_",n,"_type_",type,"_logical_",this_logical),
+        value   = logicals[[paste0(type,"_switch",this_logical)]]
       )
     })
   }
@@ -485,9 +663,6 @@ Mod_get_inputs <- function(id, set, type, RV_ISO) {
         req(!is.null(n))
         if (n()$logical == 0) {logicals <- list()} else {
           nams_logicals <- paste0("UI_set_",set,"_type_",type,"_logical_",1:n()$logical)
-          
-          print(nams_logicals)
-          
           logicals <- lapply(1:n()$logical, function(this_logical){
             if (!is.null(input[[nams_logicals[this_logical]]])) {
               input[[nams_logicals[this_logical]]]
